@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#bgGrad)" />
+  <!-- Blackboard/Canvas Icon -->
+  <rect x="20" y="24" width="60" height="42" rx="4" fill="#0F172A" stroke="#CBD5E1" stroke-width="2.5" />
+  <!-- Math Equation text on board -->
+  <text x="50" y="50" font-family="-apple-system, sans-serif" font-size="16" font-weight="bold" fill="#38BDF8" text-anchor="middle" dominant-baseline="middle">2x = 8</text>
+  <!-- Wooden easel legs -->
+  <line x1="30" y1="66" x2="22" y2="82" stroke="#E2E8F0" stroke-width="3" stroke-linecap="round" />
+  <line x1="70" y1="66" x2="78" y2="82" stroke="#E2E8F0" stroke-width="3" stroke-linecap="round" />
+  <!-- Robot/Tutor Antenna -->
+  <circle cx="50" cy="15" r="4" fill="#FBBF24" />
+  <line x1="50" y1="18" x2="50" y2="24" stroke="#FBBF24" stroke-width="2.5" stroke-linecap="round" />
+</svg>
+

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad512)" />
+  <rect x="96" y="116" width="320" height="224" rx="20" fill="#0F172A" stroke="#CBD5E1" stroke-width="12" />
+  <text x="256" y="256" font-family="-apple-system, sans-serif" font-size="84" font-weight="bold" fill="#38BDF8" text-anchor="middle" dominant-baseline="middle">2x = 8</text>
+  <line x1="148" y1="340" x2="112" y2="432" stroke="#E2E8F0" stroke-width="14" stroke-linecap="round" />
+  <line x1="364" y1="340" x2="400" y2="432" stroke="#E2E8F0" stroke-width="14" stroke-linecap="round" />
+  <circle cx="256" cy="74" r="22" fill="#FBBF24" />
+  <line x1="256" y1="92" x2="256" y2="116" stroke="#FBBF24" stroke-width="12" stroke-linecap="round" />
+</svg>
+
