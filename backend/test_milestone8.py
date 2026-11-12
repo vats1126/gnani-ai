@@ -112,6 +112,19 @@ def test_math_verbalization_multilingual():
     assert "power" in paren_exp_res, f"Expected 'power' for parenthesized exponent, got '{paren_exp_res}'"
     print("  ✅ Iteration 2 Edge Cases: decimals, bracketed division, and parenthesized exponents verified")
 
+    # 1.7 Edge Cases: Parenthesized Bases in Powers (Milestone 8 Iteration 3)
+    paren_base_pow_res = verbalize_math_for_speech("(a+b)^(n-1)", "en-IN")
+    print(f"  Parenthesized base with parenthesized exponent normalized: {paren_base_pow_res}")
+    assert "^" not in paren_base_pow_res, f"Raw '^' should not remain in '{paren_base_pow_res}'"
+    assert "power" in paren_base_pow_res, f"Expected 'power' for parenthesized base power, got '{paren_base_pow_res}'"
+
+    paren_base_sq_res = verbalize_math_for_speech("(x+1)^2 = 9", "en-IN")
+    print(f"  Parenthesized base squared normalized: {paren_base_sq_res}")
+    assert "^" not in paren_base_sq_res, f"Raw '^' should not remain in '{paren_base_sq_res}'"
+    assert "squared" in paren_base_sq_res, f"Expected 'squared' for parenthesized base squared, got '{paren_base_sq_res}'"
+    assert "equals" in paren_base_sq_res, f"Expected 'equals' in '{paren_base_sq_res}'"
+    print("  ✅ Iteration 3 Edge Cases: parenthesized bases in powers verified")
+
 
 def test_pcm_to_wav_header():
     print("\n--- Test 2: PCM to RIFF WAV Audio Packing & Structural Integrity ---")

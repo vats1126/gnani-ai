@@ -255,9 +255,9 @@ def verbalize_math_for_speech(text: str, lang: str = "en-IN") -> str:
     t = re.sub(r"[√]\s*([a-zA-Z0-9]+)", rf"{w['sqrt']} \1", t)
 
     # Powers: ^2, ², ^3, ³, ^n
-    t = re.sub(r"(\w+)\^2|\b(\w+)²", rf"\1{w['squared']}", t)
-    t = re.sub(r"(\w+)\^3|\b(\w+)³", rf"\1{w['cubed']}", t)
-    t = re.sub(r"(\w+)\^[\{\(]?([0-9a-zA-Z\+\-\*\/]+)[\}\)]?", rf"\1{w['power']}\2", t)
+    t = re.sub(r"(\w+|\)|\]|\})\s*(?:\^2\b|²)", rf"\1 {w['squared']}", t)
+    t = re.sub(r"(\w+|\)|\]|\})\s*(?:\^3\b|³)", rf"\1 {w['cubed']}", t)
+    t = re.sub(r"(\w+|\)|\]|\})\s*\^[\{\(]?([0-9a-zA-Z\+\-\*\/]+)[\}\)]?", rf"\1 {w['power']} \2", t)
 
     # Spacing between coefficient and variable (2x -> 2 x)
     t = re.sub(r"(\d)([a-zA-Z])", r"\1 \2", t)
@@ -280,6 +280,9 @@ def verbalize_math_for_speech(text: str, lang: str = "en-IN") -> str:
     t = re.sub(r"\s*(?:\*|×|\\times)\s*", w["times"], t)
     t = re.sub(r"\s*(?:÷|\\div)\s*", w["div"], t)
     t = re.sub(r"(?<=\d|[a-zA-Z\)\}\]])\s*/\s*(?=\d|[a-zA-Z\(\{\[])", w["div"], t)
+
+    # Safety catch-all for any remaining stray carets before bracket removal
+    t = re.sub(r"\^", f" {w['power']} ", t)
 
     # Stripping brackets & formatting pauses
     t = re.sub(r"[\(\)\[\]\{\}]", " ", t)
