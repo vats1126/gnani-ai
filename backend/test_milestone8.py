@@ -92,6 +92,26 @@ def test_math_verbalization_multilingual():
     assert 1 <= sentence_count <= 4, f"Expected 1 to 4 conversational sentences, got {sentence_count}"
     print(f"  ✅ Cleansing and conversational sentence limit ({sentence_count} sentences) verified")
 
+    # 1.6 Edge Cases: Decimals, Bracketed Division, and Parenthesized Exponents (Milestone 8 Iteration 2)
+    # Decimal preservation: ensures decimal points are not split into sentence boundaries and Step 3 is preserved
+    dec_res = verbalize_math_for_speech("Step 1: 0.5x = 2.5. Step 2: x = 5.0. Step 3: Check answer.", "en-IN")
+    print(f"  Decimal preservation normalized: {dec_res}")
+    assert "0.5 x" in dec_res, f"Expected '0.5 x' preserved without premature period splitting, got '{dec_res}'"
+    assert "Step 3" in dec_res, f"Expected 'Step 3' not to be dropped by 4-sentence limit, got '{dec_res}'"
+
+    # Bracketed division: ensures division following or preceding brackets verbalizes '/'
+    bracket_div_res = verbalize_math_for_speech("((x + 1) * 2) / 3 = 4", "en-IN")
+    print(f"  Bracketed division normalized: {bracket_div_res}")
+    assert "/" not in bracket_div_res, f"Raw '/' should not remain in '{bracket_div_res}'"
+    assert "divided by" in bracket_div_res, f"Expected 'divided by' for bracketed division, got '{bracket_div_res}'"
+
+    # Parenthesized exponent: ensures exponent with parens and operators verbalizes power without orphan caret
+    paren_exp_res = verbalize_math_for_speech("x^(2+n) = 16", "en-IN")
+    print(f"  Parenthesized exponent normalized: {paren_exp_res}")
+    assert "^" not in paren_exp_res, f"Orphan '^' should not remain in '{paren_exp_res}'"
+    assert "power" in paren_exp_res, f"Expected 'power' for parenthesized exponent, got '{paren_exp_res}'"
+    print("  ✅ Iteration 2 Edge Cases: decimals, bracketed division, and parenthesized exponents verified")
+
 
 def test_pcm_to_wav_header():
     print("\n--- Test 2: PCM to RIFF WAV Audio Packing & Structural Integrity ---")
