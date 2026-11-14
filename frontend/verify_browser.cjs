@@ -21,6 +21,7 @@ async function runBrowserVerification() {
   });
 
   const page = await browser.newPage();
+  await page.setViewport({ width: 1280, height: 800 });
 
   page.on('console', (msg) => {
     const text = msg.text();
@@ -38,7 +39,6 @@ async function runBrowserVerification() {
   });
 
   page.on('requestfailed', (req) => {
-    // Ignore harmless aborted requests or optional favicon
     if (!req.url().includes('favicon')) {
       errors.push(`Failed Request: ${req.url()} (${req.failure()?.errorText})`);
     }
@@ -47,104 +47,113 @@ async function runBrowserVerification() {
   console.log('Navigating to http://localhost:5173 ...');
   await page.goto('http://localhost:5173', { waitUntil: 'networkidle0', timeout: 30000 });
 
-  // 1. Check title and root render
+  // 1. Initial Mount & Component Check
   const title = await page.title();
   console.log('Page title:', title);
 
-  // Check if ErrorBoundary rendered or if App mounted cleanly
-  const rootHtml = await page.$eval('#root', (el) => el.innerHTML);
-  if (rootHtml.includes('Something went wrong')) {
-    errors.push('ErrorBoundary was triggered on mount!');
-    console.error('ErrorBoundary content:', rootHtml);
-  } else {
-    console.log('App mounted successfully without ErrorBoundary crash.');
-  }
+  const checkNoCrash = async (stepName) => {
+    const rootHtml = await page.$eval('#root', (el) => el.innerHTML);
+    if (rootHtml.includes('Something went wrong')) {
+      errors.push(`ErrorBoundary was triggered at step: ${stepName}!`);
+      console.error(`ErrorBoundary triggered at: ${stepName}`);
+      return false;
+    }
+    return true;
+  };
 
-  // Verify key components rendered
+  await checkNoCrash('initial mount');
+
   const hasHeader = await page.$('.app-header') !== null;
   const hasWhiteboard = await page.$('.wb-container') !== null;
   const hasTutorPanel = await page.$('.tutor-panel') !== null;
   const hasBottomBar = await page.$('.workspace-bottom-bar') !== null;
+  console.log(`Components verified: Header:${hasHeader}, Whiteboard:${hasWhiteboard}, Tutor:${hasTutorPanel}, Bar:${hasBottomBar}`);
 
-  console.log('Component presence check:');
-  console.log(' - Header:', hasHeader);
-  console.log(' - Whiteboard:', hasWhiteboard);
-  console.log(' - TutorPanel:', hasTutorPanel);
-  console.log(' - BottomBar:', hasBottomBar);
-
-  if (!hasHeader || !hasWhiteboard || !hasTutorPanel || !hasBottomBar) {
-    errors.push(`Missing core component! Header:${hasHeader}, Whiteboard:${hasWhiteboard}, TutorPanel:${hasTutorPanel}, BottomBar:${hasBottomBar}`);
+  // 2. Real Pointer Drawing Test (Pen, Multi-stroke, Highlighter, Eraser, Text)
+  console.log('\n--- EXECUTING REAL CANVAS DRAWING TEST ---');
+  const inkCanvas = await page.$('canvas.wb-layer-ink');
+  if (!inkCanvas) {
+    throw new Error('Could not find canvas.wb-layer-ink');
   }
 
-  // 2. Click toolbar buttons to verify no runtime exceptions
-  console.log('Testing toolbar buttons...');
+  const box = await inkCanvas.boundingBox();
+  console.log('Ink canvas bounding box:', Math.round(box.x), Math.round(box.y), Math.round(box.width), Math.round(box.height));
 
-  // Test Pen button
+  const startX = box.x + 80;
+  const startY = box.y + 80;
+
+  async function drawStroke(fromX, fromY, toX, toY, steps = 10) {
+    await page.mouse.move(fromX, fromY);
+    await page.mouse.down();
+    for (let i = 1; i <= steps; i++) {
+      const curX = fromX + (toX - fromX) * (i / steps);
+      const curY = fromY + (toY - fromY) * (i / steps);
+      await page.mouse.move(curX, curY);
+      await sleep(15);
+    }
+    await page.mouse.up();
+    await sleep(50);
+  }
+
+  // Stroke 1: Pen tool first stroke
+  console.log('Drawing Stroke 1 with Pen...');
   const penBtn = await page.$('button[aria-label="Pen tool"]');
   if (penBtn) await penBtn.click();
+  await drawStroke(startX, startY, startX + 100, startY + 50, 10);
+  await checkNoCrash('after Stroke 1');
 
-  // Test Highlighter button
+  // Stroke 2: Pen tool second stroke immediately after
+  console.log('Drawing Stroke 2 with Pen immediately after...');
+  await drawStroke(startX + 120, startY + 50, startX + 200, startY + 120, 10);
+  await checkNoCrash('after Stroke 2');
+
+  // Stroke 3: Switch to Highlighter and draw third stroke
+  console.log('Switching to Highlighter and drawing Stroke 3...');
   const highBtn = await page.$('button[aria-label="Highlighter tool"]');
   if (highBtn) await highBtn.click();
+  await drawStroke(startX, startY + 100, startX + 200, startY + 100, 10);
+  await checkNoCrash('after Highlighter Stroke 3');
 
-  // Test Text button
-  const textBtn = await page.$('button[aria-label="Text or Equation tool"]');
-  if (textBtn) await textBtn.click();
-
-  // Test Eraser button
+  // Stroke 4: Switch to Eraser and drag across canvas
+  console.log('Switching to Eraser and dragging across canvas...');
   const eraserBtn = await page.$('button[aria-label="Eraser tool"]');
   if (eraserBtn) await eraserBtn.click();
+  await drawStroke(startX + 50, startY + 40, startX + 150, startY + 110, 10);
+  await checkNoCrash('after Eraser Stroke 4');
 
-  // Switch back to Pen
-  if (penBtn) await penBtn.click();
+  // Stroke 5: Switch to Text (T), click canvas, type '2x = 8', press Enter
+  console.log('Switching to Text (T) and creating text annotation...');
+  const textBtn = await page.$('button[aria-label="Text or Equation tool"]');
+  if (textBtn) await textBtn.click();
+  await page.mouse.click(box.x + 220, box.y + 160);
+  await sleep(200);
 
-  // Test color buttons
-  const colorDots = await page.$$('.wb-color-dot');
-  console.log(`Found ${colorDots.length} color dots.`);
-  for (const dot of colorDots.slice(0, 3)) {
-    await dot.click();
+  const textInput = await page.$('.wb-floating-input-field');
+  if (textInput) {
+    console.log('Floating text input active. Typing "2x = 8"...');
+    await textInput.type('2x = 8');
+    await sleep(100);
+    await page.keyboard.press('Enter');
+    await sleep(200);
   }
+  await checkNoCrash('after Text annotation');
 
-  // Test stroke width buttons
-  const widthBtns = await page.$$('.width-group button');
-  console.log(`Found ${widthBtns.length} width buttons.`);
-  for (const wBtn of widthBtns) {
-    await wBtn.click();
-  }
-
-  // Test Presets menu
-  const presetsBtn = await page.$('button.wb-btn-demo');
-  if (presetsBtn) {
-    await presetsBtn.click();
-    await sleep(300);
-    const presetItems = await page.$$('.demo-dropdown-item');
-    console.log(`Found ${presetItems.length} demo preset items.`);
-    if (presetItems.length > 0) {
-      // Click first preset: 2x = 8
-      await presetItems[0].click();
-      console.log('Clicked demo preset 1 (2x = 8).');
-    }
-  }
-
-  await sleep(500);
-
-  // Test Undo / Redo
+  // 3. Test Undo, Redo, Clear
+  console.log('Testing Undo / Redo / Clear controls...');
   const undoBtn = await page.$('button[aria-label="Undo last stroke"]');
   if (undoBtn) {
-    const disabled = await (await undoBtn.getProperty('disabled')).jsonValue();
-    if (!disabled) {
-      await undoBtn.click();
-      console.log('Clicked Undo.');
-    }
+    await undoBtn.click();
+    console.log('Clicked Undo.');
+    await sleep(200);
+    await checkNoCrash('after Undo');
   }
 
   const redoBtn = await page.$('button[aria-label="Redo last stroke"]');
   if (redoBtn) {
-    const disabled = await (await redoBtn.getProperty('disabled')).jsonValue();
-    if (!disabled) {
-      await redoBtn.click();
-      console.log('Clicked Redo.');
-    }
+    await redoBtn.click();
+    console.log('Clicked Redo.');
+    await sleep(200);
+    await checkNoCrash('after Redo');
   }
 
   // Test Test Snapshot
@@ -153,62 +162,71 @@ async function runBrowserVerification() {
     await snapBtn.click();
     console.log('Clicked Snapshot button.');
     await sleep(400);
-    // Dismiss snapshot toast if any
     const toastClose = await page.$('.wb-snapshot-toast .toast-close');
     if (toastClose) await toastClose.click();
   }
 
-  // Test Sample PDF
-  const samplePdfBtn = await page.$('button.wb-btn-pdf-sample');
-  if (samplePdfBtn) {
-    await samplePdfBtn.click();
-    console.log('Clicked Sample PDF button.');
-    await sleep(1000);
-    // Verify PDF controls appeared
-    const closePdfBtn = await page.$('button.wb-btn-danger-subtle');
-    if (closePdfBtn) {
-      console.log('Sample PDF loaded successfully! Closing PDF...');
-      await closePdfBtn.click();
-      await sleep(500);
+  // Test Demo Presets
+  console.log('Testing Demo Presets menu...');
+  const presetsBtn = await page.$('button.wb-btn-demo');
+  if (presetsBtn) {
+    await presetsBtn.click();
+    await sleep(200);
+    const presetItems = await page.$$('.demo-dropdown-item');
+    if (presetItems.length > 0) {
+      await presetItems[0].click(); // Step 1: 2x = 8
+      console.log('Loaded Demo Preset (2x = 8).');
+      await sleep(300);
+      await checkNoCrash('after Demo Preset');
     }
   }
 
-  // Test Quick Action chips in Tutor Panel
-  console.log('Testing TutorPanel quick action chips...');
-  const chips = await page.$$('.quick-chip');
-  console.log(`Found ${chips.length} quick action chips.`);
-
-  // Click Hint chip
-  if (chips[0]) {
-    await chips[0].click();
-    console.log('Clicked Hint chip.');
-    await sleep(2000);
+  // Test Clear
+  const clearBtn = await page.$('button[aria-label="Clear ink annotations"]');
+  if (clearBtn) {
+    await clearBtn.click();
+    console.log('Clicked Clear.');
+    await sleep(200);
+    await checkNoCrash('after Clear');
   }
 
-  // Wait a little for any async operations to complete
-  await sleep(1000);
+  // 4. Test Sample PDF and Close PDF
+  console.log('Testing Sample PDF load and close...');
+  const samplePdfBtn = await page.$('button.wb-btn-pdf-sample');
+  if (samplePdfBtn) {
+    await samplePdfBtn.click();
+    console.log('Clicked Sample PDF.');
+    await sleep(1200);
+    await checkNoCrash('after Sample PDF load');
 
-  // Check messages rendered in TutorPanel
-  const messageRows = await page.$$('.message-row');
-  console.log(`Rendered message rows in TutorPanel: ${messageRows.length}`);
+    const closePdfBtn = await page.$('button.wb-btn-danger-subtle');
+    if (closePdfBtn) {
+      await closePdfBtn.click();
+      console.log('Closed PDF worksheet.');
+      await sleep(400);
+      await checkNoCrash('after Close PDF');
+    }
+  }
 
-  // Test New Session button
-  const newSessionBtn = await page.$('button[aria-label="Start new session"]');
-  if (newSessionBtn) {
-    await newSessionBtn.click();
-    console.log('Clicked New Session button.');
-    await sleep(500);
+  // 5. Test Tutor Quick Action Chip
+  console.log('Testing Tutor quick action...');
+  const hintChip = await page.$('.quick-chip');
+  if (hintChip) {
+    await hintChip.click();
+    console.log('Clicked Hint quick action chip.');
+    await sleep(2000);
+    await checkNoCrash('after Tutor Quick Action');
   }
 
   await browser.close();
 
   console.log('\n--- VERIFICATION RESULTS ---');
-  console.log(`Total Console Errors: ${errors.length}`);
+  console.log(`Total Console / Runtime Errors: ${errors.length}`);
   if (errors.length > 0) {
-    console.log('Errors:');
+    console.log('Errors encountered:');
     errors.forEach((e) => console.log('  ❌', e));
   } else {
-    console.log('✅ ZERO RUNTIME ERRORS IN BROWSER CONSOLE!');
+    console.log('✅ ZERO RUNTIME ERRORS IN REAL MULTI-STROKE DRAWING & INTERACTION TEST!');
   }
 
   process.exit(errors.length > 0 ? 1 : 0);

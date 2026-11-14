@@ -3,6 +3,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useMemo,
   useImperativeHandle,
   forwardRef,
 } from 'react';
@@ -49,6 +50,13 @@ const Whiteboard = forwardRef(function Whiteboard(
   const [strokes, setStrokes] = useState([]);
   const [textAnnotations, setTextAnnotations] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
+
+  // Sanitized valid strokes: filters out any null, undefined, or malformed items
+  const validStrokes = useMemo(() => {
+    return Array.isArray(strokes)
+      ? strokes.filter((s) => s && typeof s === 'object' && Array.isArray(s.points) && s.points.length > 0)
+      : [];
+  }, [strokes]);
 
   // Per-page annotation memory keyed by page: { board: {...}, page_1: {...}, page_2: {...} }
   const [annotationsByPage, setAnnotationsByPage] = useState({
@@ -185,13 +193,13 @@ const Whiteboard = forwardRef(function Whiteboard(
     const cssW = inkCanvas.clientWidth || 800;
     const cssH = inkCanvas.clientHeight || 600;
 
-    renderInkLayer(inkCanvas, strokes, textAnnotations, {
+    renderInkLayer(inkCanvas, validStrokes, textAnnotations, {
       customWidth: cssW,
       customHeight: cssH,
       dpr,
       clear: true,
     });
-  }, [strokes, textAnnotations]);
+  }, [validStrokes, textAnnotations]);
 
   // Redraw Layer 0 when paper style, PDF doc, page, or scale changes
   useEffect(() => {
@@ -272,7 +280,11 @@ const Whiteboard = forwardRef(function Whiteboard(
 
       // Restore page 1 annotations if previously recorded
       const page1Data = annotationsByPage['page_1'] || { strokes: [], textAnnotations: [], redoStack: [] };
-      setStrokes(page1Data.strokes || []);
+      const rawPage1Strokes = page1Data.strokes || [];
+      const cleanPage1Strokes = Array.isArray(rawPage1Strokes)
+        ? rawPage1Strokes.filter((s) => s && typeof s === 'object' && Array.isArray(s.points) && s.points.length > 0)
+        : [];
+      setStrokes(cleanPage1Strokes);
       setTextAnnotations(page1Data.textAnnotations || []);
       setRedoStack(page1Data.redoStack || []);
     } catch (err) {
@@ -306,13 +318,17 @@ const Whiteboard = forwardRef(function Whiteboard(
       const key = `page_${currentPage}`;
       setAnnotationsByPage((prev) => ({
         ...prev,
-        [key]: { strokes, textAnnotations, redoStack },
+        [key]: { strokes: validStrokes, textAnnotations, redoStack },
       }));
     }
 
     // Restore blank board annotations
     const boardData = annotationsByPage['board'] || { strokes: [], textAnnotations: [], redoStack: [] };
-    setStrokes(boardData.strokes || []);
+    const rawBoardStrokes = boardData.strokes || [];
+    const cleanBoardStrokes = Array.isArray(rawBoardStrokes)
+      ? rawBoardStrokes.filter((s) => s && typeof s === 'object' && Array.isArray(s.points) && s.points.length > 0)
+      : [];
+    setStrokes(cleanBoardStrokes);
     setTextAnnotations(boardData.textAnnotations || []);
     setRedoStack(boardData.redoStack || []);
 
@@ -337,7 +353,7 @@ const Whiteboard = forwardRef(function Whiteboard(
     setCurrentPage(1);
     setNumPages(0);
     setFileName('');
-  }, [pdfDoc, currentPage, strokes, textAnnotations, redoStack, annotationsByPage]);
+  }, [pdfDoc, currentPage, validStrokes, textAnnotations, redoStack, annotationsByPage]);
 
   /**
    * PDF Page Navigation with Per-Page Annotation Persistence.
@@ -351,18 +367,22 @@ const Whiteboard = forwardRef(function Whiteboard(
 
     setAnnotationsByPage((prev) => ({
       ...prev,
-      [oldKey]: { strokes, textAnnotations, redoStack },
+      [oldKey]: { strokes: validStrokes, textAnnotations, redoStack },
     }));
 
     // 2. Load target page annotations
     const targetData = annotationsByPage[newKey] || { strokes: [], textAnnotations: [], redoStack: [] };
-    setStrokes(targetData.strokes || []);
+    const rawTargetStrokes = targetData.strokes || [];
+    const cleanTargetStrokes = Array.isArray(rawTargetStrokes)
+      ? rawTargetStrokes.filter((s) => s && typeof s === 'object' && Array.isArray(s.points) && s.points.length > 0)
+      : [];
+    setStrokes(cleanTargetStrokes);
     setTextAnnotations(targetData.textAnnotations || []);
     setRedoStack(targetData.redoStack || []);
 
     // 3. Update current page
     setCurrentPage(newPage);
-  }, [pdfDoc, currentPage, numPages, strokes, textAnnotations, redoStack, annotationsByPage]);
+  }, [pdfDoc, currentPage, numPages, validStrokes, textAnnotations, redoStack, annotationsByPage]);
 
   /**
    * Composite Snapshot Export.
@@ -373,14 +393,14 @@ const Whiteboard = forwardRef(function Whiteboard(
       quality: 0.85,
       hasPdf: Boolean(pdfDoc),
       pageNum: pdfDoc ? currentPage : 1,
-      strokeCount: strokes.length + textAnnotations.length,
+      strokeCount: validStrokes.length + (textAnnotations || []).length,
     });
 
     if (onSnapshotGenerated) {
       onSnapshotGenerated(composite);
     }
     return composite;
-  }, [pdfDoc, currentPage, strokes, textAnnotations, onSnapshotGenerated]);
+  }, [pdfDoc, currentPage, validStrokes, textAnnotations, onSnapshotGenerated]);
 
   /**
    * Pointer Events: Live Spline Smoothing & Layer-Safe Drawing.
@@ -472,7 +492,7 @@ const Whiteboard = forwardRef(function Whiteboard(
   };
 
   const handlePointerMove = (e) => {
-    if (!isDrawingRef.current || !currentStrokeRef.current) return;
+    if (!isDrawingRef.current || !currentStrokeRef.current || !Array.isArray(currentStrokeRef.current.points)) return;
     const canvas = inkCanvasRef.current;
     if (!canvas) return;
 
@@ -568,12 +588,32 @@ const Whiteboard = forwardRef(function Whiteboard(
       }
     }
 
-    if (currentStrokeRef.current && currentStrokeRef.current.points.length > 0) {
-      setStrokes((prev) => [...prev, currentStrokeRef.current]);
-      setRedoStack([]);
-    }
+    // Capture the completed stroke into a local const FIRST before clearing ref
+    const completedStroke = currentStrokeRef.current
+      ? {
+          ...currentStrokeRef.current,
+          points: Array.isArray(currentStrokeRef.current.points)
+            ? [...currentStrokeRef.current.points]
+            : [],
+          timestamps: Array.isArray(currentStrokeRef.current.timestamps)
+            ? [...currentStrokeRef.current.timestamps]
+            : [],
+        }
+      : null;
+
     currentStrokeRef.current = null;
     lastPointRef.current = null;
+
+    if (!completedStroke || !Array.isArray(completedStroke.points) || completedStroke.points.length === 0) {
+      return;
+    }
+
+    // Pass completedStroke (NEVER currentStrokeRef.current) into state updater
+    setStrokes((prev) => [
+      ...(Array.isArray(prev) ? prev.filter((s) => s && Array.isArray(s.points) && s.points.length > 0) : []),
+      completedStroke,
+    ]);
+    setRedoStack([]);
   };
 
   /**
@@ -605,26 +645,29 @@ const Whiteboard = forwardRef(function Whiteboard(
    * Undo / Redo.
    */
   const handleUndo = useCallback(() => {
-    if (strokes.length > 0) {
-      const lastStroke = strokes[strokes.length - 1];
-      setStrokes((prev) => prev.slice(0, -1));
-      setRedoStack((prev) => [{ type: 'stroke', item: lastStroke }, ...prev]);
+    if (validStrokes.length > 0) {
+      const lastStroke = validStrokes[validStrokes.length - 1];
+      setStrokes(validStrokes.slice(0, -1));
+      setRedoStack((prev) => [{ type: 'stroke', item: lastStroke }, ...(Array.isArray(prev) ? prev : [])]);
     } else if (textAnnotations.length > 0) {
       const lastTxt = textAnnotations[textAnnotations.length - 1];
       setTextAnnotations((prev) => prev.slice(0, -1));
-      setRedoStack((prev) => [{ type: 'text', item: lastTxt }, ...prev]);
+      setRedoStack((prev) => [{ type: 'text', item: lastTxt }, ...(Array.isArray(prev) ? prev : [])]);
     }
-  }, [strokes, textAnnotations]);
+  }, [validStrokes, textAnnotations]);
 
   const handleRedo = useCallback(() => {
     if (redoStack.length === 0) return;
     const [action, ...remaining] = redoStack;
     setRedoStack(remaining);
 
-    if (action.type === 'stroke') {
-      setStrokes((prev) => [...prev, action.item]);
-    } else if (action.type === 'text') {
-      setTextAnnotations((prev) => [...prev, action.item]);
+    if (action.type === 'stroke' && action.item && Array.isArray(action.item.points) && action.item.points.length > 0) {
+      setStrokes((prev) => [
+        ...(Array.isArray(prev) ? prev.filter((s) => s && Array.isArray(s.points) && s.points.length > 0) : []),
+        action.item,
+      ]);
+    } else if (action.type === 'text' && action.item) {
+      setTextAnnotations((prev) => [...(Array.isArray(prev) ? prev.filter(Boolean) : []), action.item]);
     }
   }, [redoStack]);
 
@@ -680,8 +723,11 @@ const Whiteboard = forwardRef(function Whiteboard(
     }
 
     if (preset.getStrokes) {
-      const newStrokes = preset.getStrokes();
-      setStrokes(newStrokes);
+      const newStrokes = preset.getStrokes() || [];
+      const cleanNewStrokes = Array.isArray(newStrokes)
+        ? newStrokes.filter((s) => s && typeof s === 'object' && Array.isArray(s.points) && s.points.length > 0)
+        : [];
+      setStrokes(cleanNewStrokes);
       setTextAnnotations([]);
       setRedoStack([]);
     }
@@ -706,15 +752,15 @@ const Whiteboard = forwardRef(function Whiteboard(
     reset: handleClear,
     undo: handleUndo,
     redo: handleRedo,
-    isEmpty: () => (strokes || []).length === 0 && (textAnnotations || []).length === 0,
-    getStrokeCount: () => (strokes || []).length + (textAnnotations || []).length,
+    isEmpty: () => validStrokes.length === 0 && (textAnnotations || []).length === 0,
+    getStrokeCount: () => validStrokes.length + (textAnnotations || []).length,
     hasPdf: () => Boolean(pdfDoc),
     getCurrentPage: () => (pdfDoc ? currentPage : 1),
     getNumPages: () => (pdfDoc ? numPages : 1),
     loadPreset: (key) => handleSelectDemoPreset(key),
   }));
 
-  const isEmptyWorkspace = strokes.length === 0 && textAnnotations.length === 0;
+  const isEmptyWorkspace = validStrokes.length === 0 && (textAnnotations || []).length === 0;
 
   return (
     <div className={`wb-container ${className}`} ref={containerRef}>
@@ -726,14 +772,14 @@ const Whiteboard = forwardRef(function Whiteboard(
         setActiveColor={setActiveColor}
         strokeWidth={strokeWidth}
         setStrokeWidth={setStrokeWidth}
-        canUndo={strokes.length > 0 || textAnnotations.length > 0}
+        canUndo={validStrokes.length > 0 || (textAnnotations || []).length > 0}
         canRedo={redoStack.length > 0}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onClear={handleClear}
         onTestSnapshot={handleTestSnapshot}
         onSelectDemoPreset={handleSelectDemoPreset}
-        strokeCount={strokes.length + textAnnotations.length}
+        strokeCount={validStrokes.length + (textAnnotations || []).length}
         paperStyle={paperStyle}
         setPaperStyle={setPaperStyle}
         hasPdf={Boolean(pdfDoc)}

@@ -169,9 +169,9 @@ export function renderInkLayer(canvas, strokes = [], textAnnotations = [], optio
   }
 
   // Draw strokes
-  if (strokes && strokes.length > 0) {
+  if (strokes && Array.isArray(strokes) && strokes.length > 0) {
     for (const stroke of strokes) {
-      if (!stroke.points || stroke.points.length === 0) continue;
+      if (!stroke || typeof stroke !== 'object' || !Array.isArray(stroke.points) || stroke.points.length === 0) continue;
 
       ctx.save();
       ctx.lineCap = 'round';
@@ -357,13 +357,13 @@ export function redrawCanvas(canvas, strokes, options = {}) {
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, cssWidth, cssHeight);
 
-  if (!strokes || strokes.length === 0) {
+  if (!strokes || !Array.isArray(strokes) || strokes.length === 0) {
     return;
   }
 
   // Render each stroke
   for (const stroke of strokes) {
-    if (!stroke.points || stroke.points.length === 0) continue;
+    if (!stroke || typeof stroke !== 'object' || !Array.isArray(stroke.points) || stroke.points.length === 0) continue;
 
     ctx.save();
     ctx.lineCap = 'round';
@@ -476,7 +476,9 @@ export function exportCanvasSnapshot(canvas, strokes, maxDim = 1400, quality = 0
     bytes: approxBytes,
     width: targetW,
     height: targetH,
-    strokeCount: (strokes || []).length,
+    strokeCount: Array.isArray(strokes)
+      ? strokes.filter((s) => s && Array.isArray(s.points) && s.points.length > 0).length
+      : 0,
   };
 }
 
