@@ -64,28 +64,28 @@ export default function TutorPanel({
         <button
           type="button"
           className="quick-chip"
-          onClick={() => onQuickAction('hint', 'Can you give me a small hint for this step?')}
+          onClick={() => onQuickAction?.('hint', 'Can you give me a small hint for this step?')}
         >
           💡 Hint
         </button>
         <button
           type="button"
           className="quick-chip"
-          onClick={() => onQuickAction('check_work', 'Please check my work on the board and tell me if this step is correct.')}
+          onClick={() => onQuickAction?.('check_work', 'Please check my work on the board and tell me if this step is correct.')}
         >
           🔍 Check work
         </button>
         <button
           type="button"
           className="quick-chip"
-          onClick={() => onQuickAction('explain_simply', 'Can you explain this concept in simpler words?')}
+          onClick={() => onQuickAction?.('explain_simply', 'Can you explain this concept in simpler words?')}
         >
           📖 Explain simply
         </button>
         <button
           type="button"
           className="quick-chip"
-          onClick={() => onQuickAction('practice', 'Can you give me a practice problem to solve on the board?')}
+          onClick={() => onQuickAction?.('practice', 'Can you give me a practice problem to solve on the board?')}
         >
           🎯 Practice
         </button>
@@ -167,7 +167,7 @@ export default function TutorPanel({
                     )}
 
                     {/* Step-by-step notes from SymPy verifier */}
-                    {!isStudent && msg.steps && msg.steps.length > 0 && (
+                    {!isStudent && Array.isArray(msg.steps) && msg.steps.length > 0 && (
                       <div className="message-verifier-steps">
                         {msg.steps.map((st, i) => (
                           <div key={i} className="verifier-step-item">
@@ -192,7 +192,7 @@ export default function TutorPanel({
                           <button
                             type="button"
                             className="btn-audio-action btn-audio-stop"
-                            onClick={onStopAudio}
+                            onClick={() => onStopAudio?.()}
                             title="Stop playing voice"
                             aria-label="Stop audio"
                           >
@@ -202,7 +202,7 @@ export default function TutorPanel({
                           <button
                             type="button"
                             className="btn-audio-action btn-audio-play"
-                            onClick={() => onPlayAudio(msg, msgKey)}
+                            onClick={() => onPlayAudio?.(msg, msgKey)}
                             disabled={isLoadingAudio}
                             title="Read answer aloud using Gnani Timbre TTS"
                             aria-label="Read answer aloud"

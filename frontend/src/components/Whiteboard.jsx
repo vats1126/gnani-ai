@@ -21,8 +21,14 @@ import {
 import { getSamplePdfBytes } from '../utils/samplePdf';
 import WhiteboardToolbar from './WhiteboardToolbar';
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+// Safely configure PDF.js worker
+try {
+  if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+  }
+} catch (err) {
+  console.warn('PDF.js worker initialization warning in Whiteboard:', err);
+}
 
 const Whiteboard = forwardRef(function Whiteboard(
   { onSnapshotGenerated, onDemoPresetLoaded, className = '' },
@@ -198,19 +204,32 @@ const Whiteboard = forwardRef(function Whiteboard(
   }, [renderLayer1]);
 
   /**
-   * Handle responsive container resizing via ResizeObserver.
+   * Handle responsive container resizing via ResizeObserver with loop guard.
    */
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     let animId = null;
-    const observer = new ResizeObserver(() => {
-      if (animId) cancelAnimationFrame(animId);
-      animId = requestAnimationFrame(() => {
-        renderLayer0();
-        renderLayer1();
-      });
+    let lastW = 0;
+    let lastH = 0;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const cr = entry.contentRect;
+        const w = Math.round(cr.width);
+        const h = Math.round(cr.height);
+        // Guard against duplicate / jitter notifications causing infinite loop
+        if (w === lastW && h === lastH) continue;
+        lastW = w;
+        lastH = h;
+
+        if (animId) cancelAnimationFrame(animId);
+        animId = requestAnimationFrame(() => {
+          renderLayer0();
+          renderLayer1();
+        });
+      }
     });
 
     observer.observe(container);
@@ -676,16 +695,19 @@ const Whiteboard = forwardRef(function Whiteboard(
    * Imperative API.
    */
   useImperativeHandle(ref, () => ({
+    exportSnapshot,
     exportCompositeSnapshot: exportSnapshot,
     captureSnapshot: exportSnapshot,
     loadSamplePdf,
     loadPdfFile,
+    loadPdf: loadPdfFile,
     closePdf,
     clear: handleClear,
+    reset: handleClear,
     undo: handleUndo,
     redo: handleRedo,
-    isEmpty: () => strokes.length === 0 && textAnnotations.length === 0,
-    getStrokeCount: () => strokes.length + textAnnotations.length,
+    isEmpty: () => (strokes || []).length === 0 && (textAnnotations || []).length === 0,
+    getStrokeCount: () => (strokes || []).length + (textAnnotations || []).length,
     hasPdf: () => Boolean(pdfDoc),
     getCurrentPage: () => (pdfDoc ? currentPage : 1),
     getNumPages: () => (pdfDoc ? numPages : 1),

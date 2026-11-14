@@ -17,14 +17,14 @@ const STROKE_WIDTHS = [
 ];
 
 export default function WhiteboardToolbar({
-  activeTool,
+  activeTool = 'pen',
   setActiveTool,
-  activeColor,
+  activeColor = '#1E293B',
   setActiveColor,
-  strokeWidth,
+  strokeWidth = 0.006,
   setStrokeWidth,
-  canUndo,
-  canRedo,
+  canUndo = false,
+  canRedo = false,
   onUndo,
   onRedo,
   onClear,
@@ -91,7 +91,7 @@ export default function WhiteboardToolbar({
         <button
           type="button"
           className={`wb-btn ${activeTool === 'pen' ? 'wb-btn-active' : ''}`}
-          onClick={() => setActiveTool('pen')}
+          onClick={() => setActiveTool?.('pen')}
           title="Pen (P)"
           aria-label="Pen tool"
           aria-pressed={activeTool === 'pen'}
@@ -106,9 +106,9 @@ export default function WhiteboardToolbar({
           type="button"
           className={`wb-btn ${activeTool === 'highlighter' ? 'wb-btn-active' : ''}`}
           onClick={() => {
-            setActiveTool('highlighter');
+            setActiveTool?.('highlighter');
             if (activeColor === '#1E293B') {
-              setActiveColor('#FACC15');
+              setActiveColor?.('#FACC15');
             }
           }}
           title="Highlighter (H)"
@@ -125,7 +125,7 @@ export default function WhiteboardToolbar({
         <button
           type="button"
           className={`wb-btn ${activeTool === 'text' ? 'wb-btn-active' : ''}`}
-          onClick={() => setActiveTool('text')}
+          onClick={() => setActiveTool?.('text')}
           title="Text / Equation Tool (T)"
           aria-label="Text or Equation tool"
           aria-pressed={activeTool === 'text'}
@@ -141,7 +141,7 @@ export default function WhiteboardToolbar({
         <button
           type="button"
           className={`wb-btn ${activeTool === 'eraser' ? 'wb-btn-active' : ''}`}
-          onClick={() => setActiveTool('eraser')}
+          onClick={() => setActiveTool?.('eraser')}
           title="Eraser (E) - Erases ink without damaging grid or PDF"
           aria-label="Eraser tool"
           aria-pressed={activeTool === 'eraser'}
@@ -164,8 +164,8 @@ export default function WhiteboardToolbar({
             className={`wb-color-dot ${activeColor === c.hex && activeTool !== 'eraser' ? 'wb-color-selected' : ''}`}
             style={{ backgroundColor: c.hex }}
             onClick={() => {
-              setActiveColor(c.hex);
-              if (activeTool === 'eraser') setActiveTool('pen');
+              setActiveColor?.(c.hex);
+              if (activeTool === 'eraser') setActiveTool?.('pen');
             }}
             title={c.label}
             aria-label={`Color ${c.label}`}
@@ -180,7 +180,7 @@ export default function WhiteboardToolbar({
             key={w.id}
             type="button"
             className={`wb-btn-icon ${strokeWidth === w.normalized ? 'wb-btn-active' : ''}`}
-            onClick={() => setStrokeWidth(w.normalized)}
+            onClick={() => setStrokeWidth?.(w.normalized)}
             title={`${w.label} Stroke (${w.px}px)`}
             aria-label={`${w.label} Stroke`}
           >
@@ -268,7 +268,7 @@ export default function WhiteboardToolbar({
               <button
                 type="button"
                 className="wb-btn wb-btn-pdf-sample"
-                onClick={onLoadSamplePdf}
+                onClick={() => onLoadSamplePdf?.()}
                 title="Load sample algebra worksheet PDF"
               >
                 <span className="wb-icon">📄</span>
@@ -281,7 +281,7 @@ export default function WhiteboardToolbar({
             <button
               type="button"
               className="wb-btn-icon"
-              onClick={onPrevPage}
+              onClick={() => onPrevPage?.()}
               disabled={currentPage <= 1}
               title="Previous Page"
             >
@@ -293,26 +293,26 @@ export default function WhiteboardToolbar({
             <button
               type="button"
               className="wb-btn-icon"
-              onClick={onNextPage}
+              onClick={() => onNextPage?.()}
               disabled={currentPage >= numPages}
               title="Next Page"
             >
               ▶
             </button>
             {onZoomOut && (
-              <button type="button" className="wb-btn-icon" onClick={onZoomOut} title="Zoom Out">
+              <button type="button" className="wb-btn-icon" onClick={() => onZoomOut?.()} title="Zoom Out">
                 −
               </button>
             )}
             {onZoomIn && (
-              <button type="button" className="wb-btn-icon" onClick={onZoomIn} title="Zoom In">
+              <button type="button" className="wb-btn-icon" onClick={() => onZoomIn?.()} title="Zoom In">
                 +
               </button>
             )}
             <button
               type="button"
               className="wb-btn wb-btn-danger-subtle"
-              onClick={onClosePdf}
+              onClick={() => onClosePdf?.()}
               title="Close PDF and return to whiteboard"
             >
               ✕ Close PDF
@@ -326,7 +326,7 @@ export default function WhiteboardToolbar({
         <button
           type="button"
           className="wb-btn-icon"
-          onClick={onUndo}
+          onClick={() => onUndo?.()}
           disabled={!canUndo}
           title="Undo (Cmd+Z)"
           aria-label="Undo last stroke"
@@ -340,7 +340,7 @@ export default function WhiteboardToolbar({
         <button
           type="button"
           className="wb-btn-icon"
-          onClick={onRedo}
+          onClick={() => onRedo?.()}
           disabled={!canRedo}
           title="Redo (Cmd+Shift+Z)"
           aria-label="Redo last stroke"
@@ -391,7 +391,7 @@ export default function WhiteboardToolbar({
         <button
           type="button"
           className="wb-btn wb-btn-danger"
-          onClick={onClear}
+          onClick={() => onClear?.()}
           disabled={strokeCount === 0}
           title="Clear Ink Annotations"
           aria-label="Clear ink annotations"
@@ -407,7 +407,7 @@ export default function WhiteboardToolbar({
         <button
           type="button"
           className="wb-btn wb-btn-secondary"
-          onClick={onTestSnapshot}
+          onClick={() => onTestSnapshot?.()}
           title="Generate test composite snapshot to verify AI vision payload"
           aria-label="Test snapshot export"
         >

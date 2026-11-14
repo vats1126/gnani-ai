@@ -14,7 +14,7 @@ export const GNANI_LOCALES = [
   { code: 'gu-IN', label: 'Gujarati', native: 'ગુજરાતી' },
 ];
 
-export default function LanguageSelector({ selectedLanguage, onLanguageChange }) {
+export default function LanguageSelector({ selectedLanguage = 'indic-auto', onLanguageChange }) {
   return (
     <div className="lang-selector-wrapper">
       <label htmlFor="language-select" className="lang-label">
@@ -29,7 +29,7 @@ export default function LanguageSelector({ selectedLanguage, onLanguageChange })
         id="language-select"
         className="lang-select"
         value={selectedLanguage}
-        onChange={(e) => onLanguageChange(e.target.value)}
+        onChange={(e) => onLanguageChange?.(e.target.value)}
         aria-label="Select tutoring language"
       >
         {GNANI_LOCALES.map((loc) => (

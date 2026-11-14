@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function FeedbackBadge({ status, detail }) {
+export default function FeedbackBadge({ status = '', detail = '' }) {
   if (!status || status === 'not_applicable') {
     return null;
   }
