@@ -298,8 +298,7 @@ export function stopCurrentAudio() {
 
 /**
  * Speaks text using the browser's native SpeechSynthesis API as an offline/rate-limit fallback.
- * Automatically cleans text and algebraic symbols for natural speech pronunciation.
- * Filters for Google/Natural/Online/Neural voices matching selected language, with rate 0.96 and pitch 1.0.
+ * Automatically cleans text for natural speech pronunciation.
  * 
  * @param {string} text
  * @param {string} languageCode - Target locale e.g. 'en-IN', 'hi-IN', 'kn-IN', 'ta-IN', 'te-IN'
@@ -316,7 +315,7 @@ export function speakWithBrowserFallback(text, languageCode = 'en-IN', onStart, 
 
   stopCurrentAudio();
 
-  // Strip markdown & clean algebraic symbols for vocalization
+  // Strip markdown formatting for natural vocalization
   const clean = text
     .replace(/\*{1,3}(.*?)\*{1,3}/g, '$1')
     .replace(/`+(.*?)`+/g, '$1')
@@ -325,12 +324,6 @@ export function speakWithBrowserFallback(text, languageCode = 'en-IN', onStart, 
     .replace(/\\\((.*?)\\\)/g, '$1')
     .replace(/\$\$(.*?)\$\$/g, '$1')
     .replace(/\$(.*?)\$/g, '$1')
-    .replace(/\\text\{(.*?)\}/g, '$1')
-    .replace(/(\d)([a-zA-Z])/g, '$1 $2')
-    .replace(/\s*=\s*/g, ' equals ')
-    .replace(/\s*\+\s*/g, ' plus ')
-    .replace(/(?<=\w)\s+-\s+(?=\w)|(?<=\d)\s*-\s*(?=\w)|(?<=\w)\s*-\s*(?=\d)/g, ' minus ')
-    .replace(/[\(\)\[\]\{\}]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -342,26 +335,7 @@ export function speakWithBrowserFallback(text, languageCode = 'en-IN', onStart, 
   const utterance = new SpeechSynthesisUtterance(clean);
   const targetLang = (languageCode && languageCode !== 'indic-auto') ? languageCode : 'en-IN';
   utterance.lang = targetLang;
-  utterance.rate = 0.96;
-  utterance.pitch = 1.0;
-
-  // Filter for matching natural/Google/online/neural voices
-  const voices = window.speechSynthesis.getVoices() || [];
-  if (voices.length > 0) {
-    const langPrefix = targetLang.split('-')[0].toLowerCase();
-    const matchingLangVoices = voices.filter((v) =>
-      v.lang.toLowerCase() === targetLang.toLowerCase() ||
-      v.lang.toLowerCase().startsWith(langPrefix)
-    );
-
-    if (matchingLangVoices.length > 0) {
-      // Prioritize Natural, Google, Online, or Neural voices
-      const naturalVoice = matchingLangVoices.find((v) =>
-        /natural|google|online|neural/i.test(v.name)
-      );
-      utterance.voice = naturalVoice || matchingLangVoices[0];
-    }
-  }
+  utterance.rate = 0.95;
 
   utterance.onstart = () => {
     if (onStart) onStart();

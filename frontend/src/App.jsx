@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Header from './components/Header';
 import Whiteboard from './components/Whiteboard';
+import PdfViewer from './components/PdfViewer';
 import TutorPanel from './components/TutorPanel';
 import VoiceButton from './components/VoiceButton';
 import {
@@ -40,6 +41,7 @@ export default function App() {
 
   // Component refs
   const whiteboardRef = useRef(null);
+  const pdfViewerRef = useRef(null);
   const [latestSnapshot, setLatestSnapshot] = useState(null);
 
   // Conversation history
@@ -185,20 +187,6 @@ export default function App() {
     setTutorStatus('ready');
   }, []);
 
-  // Handle switching between digital whiteboard and PDF worksheet
-  const handleInputSourceChange = useCallback((newSource) => {
-    setInputSource(newSource);
-    if (newSource === 'pdf') {
-      if (!whiteboardRef.current?.hasPdf?.()) {
-        whiteboardRef.current?.loadSamplePdf?.();
-      }
-    } else {
-      if (whiteboardRef.current?.hasPdf?.()) {
-        whiteboardRef.current?.closePdf?.();
-      }
-    }
-  }, []);
-
   // Execute a student turn against /api/tutor/turn
   const executeTurn = useCallback(async (actionType = 'ask', overrideText = null, overrideLang = null) => {
     stopCurrentAudio();
@@ -215,15 +203,17 @@ export default function App() {
     try {
       const questionText = (overrideText !== null ? overrideText : typedQuestion).trim();
 
-      // 1. Capture visual snapshot from unified whiteboard
-      const snapshot = whiteboardRef.current?.exportCompositeSnapshot?.() || whiteboardRef.current?.captureSnapshot?.();
+      // 1. Capture visual snapshot based on active input source
+      let snapshot = null;
+      if (inputSource === 'pdf' && pdfViewerRef.current) {
+        snapshot = pdfViewerRef.current.captureSnapshot();
+      } else if (inputSource === 'whiteboard' && whiteboardRef.current) {
+        snapshot = whiteboardRef.current.captureSnapshot();
+      }
 
       if (snapshot) {
         setLatestSnapshot(snapshot);
       }
-
-      const hasPdf = Boolean(snapshot?.hasPdf ?? whiteboardRef.current?.hasPdf?.() ?? (inputSource === 'pdf'));
-      const turnInputSource = hasPdf ? 'pdf' : 'whiteboard';
 
       const isBoardEmpty = whiteboardRef.current ? whiteboardRef.current.isEmpty() : true;
       const hasVisualPayload = snapshot !== null;
@@ -239,9 +229,8 @@ export default function App() {
       const studentTurn = {
         id: 'msg_student_' + Date.now(),
         sender: 'student',
-        text: questionText || (turnInputSource === 'pdf' ? '(Sent PDF worksheet page for review)' : '(Sent whiteboard drawing for review)'),
+        text: questionText || (inputSource === 'pdf' ? '(Sent PDF worksheet page for review)' : '(Sent whiteboard drawing for review)'),
         snapshotThumbnail: snapshot?.dataUrl || latestSnapshot?.dataUrl || null,
-        hasPdf,
         timestamp,
       };
 
@@ -276,7 +265,7 @@ export default function App() {
         learner_level: 'school',
         language_code: activeLanguage,
         message: questionText,
-        input_source: turnInputSource,
+        input_source: inputSource,
         whiteboard_image_base64: snapshot?.dataUrl || latestSnapshot?.dataUrl || null,
         action: actionType,
         history: recentHistory,
@@ -509,7 +498,7 @@ export default function App() {
         backendConnected={backendConnected}
         onNewSession={handleNewSession}
         inputSource={inputSource}
-        onInputSourceChange={handleInputSourceChange}
+        onInputSourceChange={setInputSource}
       />
 
       {/* Device Voice Fallback Toast Pill (Milestone 7) */}
@@ -543,21 +532,25 @@ export default function App() {
 
       {/* Main Responsive Two-Column Workspace */}
       <main className="workspace-body">
-        {/* Left Column: Unified Two-Layer Digital Whiteboard & Document Workspace */}
+        {/* Left Column: Digital Whiteboard OR PDF Worksheet Viewer */}
         <section
           className={`workspace-col whiteboard-col ${mobileTab !== 'whiteboard' ? 'mobile-hidden' : ''}`}
           aria-label={inputSource === 'pdf' ? 'PDF Worksheet' : 'Student Whiteboard'}
         >
-          <Whiteboard
-            ref={whiteboardRef}
-            onSnapshotGenerated={(snapshot) => {
-              setLatestSnapshot(snapshot);
-              if (snapshot?.hasPdf) {
-                setInputSource('pdf');
-              }
-            }}
-            onDemoPresetLoaded={handleDemoPresetLoaded}
-          />
+          {inputSource === 'whiteboard' ? (
+            <Whiteboard
+              ref={whiteboardRef}
+              onSnapshotGenerated={(snapshot) => setLatestSnapshot(snapshot)}
+              onDemoPresetLoaded={handleDemoPresetLoaded}
+              onSwitchToPdf={() => setInputSource('pdf')}
+            />
+          ) : (
+            <PdfViewer
+              ref={pdfViewerRef}
+              onSnapshotGenerated={(snapshot) => setLatestSnapshot(snapshot)}
+              onClose={() => setInputSource('whiteboard')}
+            />
+          )}
         </section>
 
         {/* Right Column: AI Tutor Conversation & Feedback Panel */}
@@ -599,7 +592,7 @@ export default function App() {
           <button
             type="button"
             className={`pdf-mode-toggle-btn ${inputSource === 'pdf' ? 'pdf-active' : ''}`}
-            onClick={() => handleInputSourceChange(inputSource === 'whiteboard' ? 'pdf' : 'whiteboard')}
+            onClick={() => setInputSource((src) => (src === 'whiteboard' ? 'pdf' : 'whiteboard'))}
             title={inputSource === 'pdf' ? 'Switch back to Whiteboard' : 'Upload or inspect PDF worksheet (Section 6)'}
             aria-label="Toggle PDF Worksheet Mode"
           >

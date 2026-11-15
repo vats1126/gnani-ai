@@ -112,8 +112,7 @@ async def speak_endpoint(payload: SpeakRequest):
     try:
         wav_bytes = await synthesize_speech(
             text=payload.text,
-            language_code=payload.language_code,
-            bypass_gnani=payload.bypass_gnani
+            language_code=payload.language_code
         )
         return Response(
             content=wav_bytes,

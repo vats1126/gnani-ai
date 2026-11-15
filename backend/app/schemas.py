@@ -69,7 +69,7 @@ class TutorTurnRequest(BaseModel):
         if "base64," in raw:
             raw = raw.split("base64,", 1)[1]
         try:
-            return base64.b64decode(raw, validate=True)
+            return base64.b64decode(raw)
         except Exception as e:
             raise ValueError(f"Corrupted or invalid base64 image data: {e}")
 
@@ -81,7 +81,7 @@ class TutorTurnRequest(BaseModel):
         if "base64," in raw:
             raw = raw.split("base64,", 1)[1]
         try:
-            return base64.b64decode(raw, validate=True)
+            return base64.b64decode(raw)
         except Exception as e:
             raise ValueError(f"Corrupted or invalid base64 audio data: {e}")
 
@@ -112,7 +112,6 @@ class TranscribeResponse(BaseModel):
 class SpeakRequest(BaseModel):
     text: str = Field(..., max_length=1500, description="Text string to synthesize (max 1500 chars)")
     language_code: str = Field(default="en-IN", description="Target Indic locale")
-    bypass_gnani: bool = Field(default=False, description="Bypasses Gnani Timbre to test or use Gemini Native Audio TTS")
 
     @field_validator("text")
     @classmethod

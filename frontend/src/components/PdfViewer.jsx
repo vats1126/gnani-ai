@@ -3,14 +3,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { getSamplePdfBytes } from '../utils/samplePdf';
 
-// Safely configure PDF.js worker using Vite's URL asset import
-try {
-  if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
-  }
-} catch (err) {
-  console.warn('PDF.js worker initialization warning in PdfViewer:', err);
-}
+// Configure PDF.js worker using Vite's URL asset import
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15MB limit (Section 6 & 7C)
 

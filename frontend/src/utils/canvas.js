@@ -6,12 +6,6 @@
 export const PAPER_BG = '#FAF8F5';
 export const PAPER_WHITE = '#FFFFFF';
 
-export const PAPER_STYLES = {
-  MATH_GRID: 'math_grid',
-  RULED: 'ruled',
-  PLAIN: 'plain',
-};
-
 /**
  * Normalizes a pixel point (px, py) relative to canvas CSS dimensions (width, height).
  * Ensures coordinates stay strictly in [0, 1].
@@ -41,284 +35,6 @@ export function denormalizeLineWidth(normWidth, width, height, minPx = 1.5, maxP
   const baseDim = Math.min(width, height) || 600;
   const px = normWidth * baseDim;
   return Math.max(minPx, Math.min(maxPx, px));
-}
-
-/**
- * Renders the chosen paper background style (Math Grid, Ruled Lines, Plain Paper)
- * onto an underlay canvas (Layer 0) with high-DPI scaling.
- *
- * @param {HTMLCanvasElement} canvas
- * @param {string} [paperStyle='math_grid']
- * @param {Object} [options]
- */
-export function renderPaperBackground(canvas, paperStyle = 'math_grid', options = {}) {
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
-  const dpr = options.dpr || window.devicePixelRatio || 1;
-  const cssWidth = options.customWidth || canvas.clientWidth || 800;
-  const cssHeight = options.customHeight || canvas.clientHeight || 600;
-
-  const targetWidth = Math.floor(cssWidth * dpr);
-  const targetHeight = Math.floor(cssHeight * dpr);
-
-  if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
-  }
-
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  // Base paper color
-  ctx.fillStyle = options.bgColor || PAPER_BG;
-  ctx.fillRect(0, 0, cssWidth, cssHeight);
-
-  if (paperStyle === PAPER_STYLES.MATH_GRID) {
-    const gridSize = 24;
-    ctx.save();
-    ctx.lineWidth = 1;
-
-    // Minor grid lines
-    ctx.strokeStyle = '#E2E8F0';
-    ctx.beginPath();
-    for (let x = gridSize; x < cssWidth; x += gridSize) {
-      if (x % 120 !== 0) {
-        ctx.moveTo(x + 0.5, 0);
-        ctx.lineTo(x + 0.5, cssHeight);
-      }
-    }
-    for (let y = gridSize; y < cssHeight; y += gridSize) {
-      if (y % 120 !== 0) {
-        ctx.moveTo(0, y + 0.5);
-        ctx.lineTo(cssWidth, y + 0.5);
-      }
-    }
-    ctx.stroke();
-
-    // Major grid lines (every 5 cells = 120px)
-    ctx.strokeStyle = '#CBD5E1';
-    ctx.beginPath();
-    for (let x = 120; x < cssWidth; x += 120) {
-      ctx.moveTo(x + 0.5, 0);
-      ctx.lineTo(x + 0.5, cssHeight);
-    }
-    for (let y = 120; y < cssHeight; y += 120) {
-      ctx.moveTo(0, y + 0.5);
-      ctx.lineTo(cssWidth, y + 0.5);
-    }
-    ctx.stroke();
-    ctx.restore();
-  } else if (paperStyle === PAPER_STYLES.RULED) {
-    const lineHeight = 28;
-    ctx.save();
-    ctx.lineWidth = 1;
-
-    // Horizontal ruled lines
-    ctx.strokeStyle = '#E2E8F0';
-    ctx.beginPath();
-    for (let y = lineHeight + 20; y < cssHeight; y += lineHeight) {
-      ctx.moveTo(0, y + 0.5);
-      ctx.lineTo(cssWidth, y + 0.5);
-    }
-    ctx.stroke();
-
-    // Left vertical margin line (classic pink/crimson margin)
-    const marginX = Math.max(48, Math.round(cssWidth * 0.1));
-    ctx.strokeStyle = '#FCA5A5';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(marginX + 0.5, 0);
-    ctx.lineTo(marginX + 0.5, cssHeight);
-    ctx.stroke();
-
-    ctx.restore();
-  }
-}
-
-/**
- * Renders normalized ink strokes (pen, highlighter, layer-safe eraser) and typed text
- * annotations onto an overlay canvas (Layer 1) with High-DPI scaling.
- *
- * @param {HTMLCanvasElement} canvas
- * @param {Array} strokes
- * @param {Array} [textAnnotations=[]]
- * @param {Object} [options]
- */
-export function renderInkLayer(canvas, strokes = [], textAnnotations = [], options = {}) {
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
-  const dpr = options.dpr || window.devicePixelRatio || 1;
-  const cssWidth = options.customWidth || canvas.clientWidth || 800;
-  const cssHeight = options.customHeight || canvas.clientHeight || 600;
-
-  const targetWidth = Math.floor(cssWidth * dpr);
-  const targetHeight = Math.floor(cssHeight * dpr);
-
-  if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
-  }
-
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  if (options.clear !== false) {
-    ctx.clearRect(0, 0, cssWidth, cssHeight);
-  }
-
-  // Draw strokes
-  if (strokes && Array.isArray(strokes) && strokes.length > 0) {
-    for (const stroke of strokes) {
-      if (!stroke || typeof stroke !== 'object' || !Array.isArray(stroke.points) || stroke.points.length === 0) continue;
-
-      ctx.save();
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      const baseWidth = denormalizeLineWidth(
-        stroke.lineWidth || 0.005,
-        cssWidth,
-        cssHeight
-      );
-
-      if (stroke.tool === 'highlighter') {
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = 0.35;
-        ctx.strokeStyle = stroke.color || '#FACC15';
-        ctx.lineWidth = baseWidth * 2.8;
-      } else if (stroke.tool === 'eraser') {
-        // True layer-safe eraser punches transparent holes on Layer 1
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.globalAlpha = 1.0;
-        ctx.strokeStyle = 'rgba(0,0,0,1)';
-        ctx.lineWidth = baseWidth * 2.5;
-      } else {
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = 1.0;
-        ctx.strokeStyle = stroke.color || '#1E293B';
-        ctx.lineWidth = baseWidth;
-      }
-
-      const points = stroke.points;
-      if (points.length === 1) {
-        const pt = points[0];
-        const cx = pt.x * cssWidth;
-        const cy = pt.y * cssHeight;
-        if (stroke.tool === 'eraser') {
-          ctx.beginPath();
-          ctx.arc(cx, cy, ctx.lineWidth / 2, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          ctx.fillStyle = ctx.strokeStyle;
-          ctx.beginPath();
-          ctx.arc(cx, cy, ctx.lineWidth / 2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      } else {
-        ctx.beginPath();
-        ctx.moveTo(points[0].x * cssWidth, points[0].y * cssHeight);
-
-        for (let i = 1; i < points.length; i++) {
-          const p0 = points[i - 1];
-          const p1 = points[i];
-          const midX = ((p0.x + p1.x) / 2) * cssWidth;
-          const midY = ((p0.y + p1.y) / 2) * cssHeight;
-          ctx.quadraticCurveTo(p0.x * cssWidth, p0.y * cssHeight, midX, midY);
-        }
-        const last = points[points.length - 1];
-        ctx.lineTo(last.x * cssWidth, last.y * cssHeight);
-        ctx.stroke();
-      }
-
-      ctx.restore();
-    }
-  }
-
-  // Draw typed text/equation annotations on Layer 1
-  if (textAnnotations && textAnnotations.length > 0) {
-    for (const item of textAnnotations) {
-      if (!item.text) continue;
-      ctx.save();
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = 1.0;
-      ctx.fillStyle = item.color || '#1E293B';
-      const fontSizePx = Math.max(14, Math.round(item.fontSizeNorm ? item.fontSizeNorm * Math.min(cssWidth, cssHeight) : 18));
-      ctx.font = `600 ${fontSizePx}px Inter, system-ui, -apple-system, sans-serif`;
-      ctx.textBaseline = 'top';
-      ctx.fillText(item.text, item.x * cssWidth, item.y * cssHeight);
-      ctx.restore();
-    }
-  }
-}
-
-/**
- * Composites Layer 0 (underlay: paper grid or PDF page) and Layer 1 (ink & annotations)
- * onto an offscreen canvas with a solid white background, returning a compressed JPEG data URL.
- *
- * @param {HTMLCanvasElement} bgCanvas
- * @param {HTMLCanvasElement} inkCanvas
- * @param {Object} [options]
- * @returns {{ dataUrl: string, bytes: number, width: number, height: number, hasPdf: boolean, pageNum: number, strokeCount: number }}
- */
-export function exportCompositeSnapshot(bgCanvas, inkCanvas, options = {}) {
-  const maxDim = options.maxDim || 1400;
-  const quality = options.quality !== undefined ? options.quality : 0.85;
-
-  const srcW = (bgCanvas && bgCanvas.width) || (inkCanvas && inkCanvas.width) || 800;
-  const srcH = (bgCanvas && bgCanvas.height) || (inkCanvas && inkCanvas.height) || 600;
-
-  let targetW = srcW;
-  let targetH = srcH;
-
-  if (targetW > maxDim || targetH > maxDim) {
-    if (targetW >= targetH) {
-      targetH = Math.round((targetH / targetW) * maxDim);
-      targetW = maxDim;
-    } else {
-      targetW = Math.round((targetW / targetH) * maxDim);
-      targetH = maxDim;
-    }
-  }
-
-  targetW = Math.max(300, targetW);
-  targetH = Math.max(200, targetH);
-
-  const offscreen = document.createElement('canvas');
-  offscreen.width = targetW;
-  offscreen.height = targetH;
-  const ctx = offscreen.getContext('2d');
-
-  // Solid white background prevents black artifacts in JPEG compression
-  ctx.fillStyle = PAPER_WHITE;
-  ctx.fillRect(0, 0, targetW, targetH);
-
-  // Draw Layer 0 (underlay: paper grid or PDF page)
-  if (bgCanvas && bgCanvas.width > 0 && bgCanvas.height > 0) {
-    ctx.drawImage(bgCanvas, 0, 0, targetW, targetH);
-  }
-
-  // Draw Layer 1 (transparent overlay: pen, highlighter, text)
-  if (inkCanvas && inkCanvas.width > 0 && inkCanvas.height > 0) {
-    ctx.drawImage(inkCanvas, 0, 0, targetW, targetH);
-  }
-
-  const dataUrl = offscreen.toDataURL('image/jpeg', quality);
-
-  const base64Index = dataUrl.indexOf(';base64,');
-  const base64Str = base64Index !== -1 ? dataUrl.slice(base64Index + 8) : dataUrl;
-  const approxBytes = Math.round((base64Str.length * 3) / 4);
-
-  return {
-    dataUrl,
-    bytes: approxBytes,
-    width: targetW,
-    height: targetH,
-    hasPdf: Boolean(options.hasPdf),
-    pageNum: options.pageNum || 1,
-    strokeCount: options.strokeCount || 0,
-  };
 }
 
 /**
@@ -357,13 +73,13 @@ export function redrawCanvas(canvas, strokes, options = {}) {
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, cssWidth, cssHeight);
 
-  if (!strokes || !Array.isArray(strokes) || strokes.length === 0) {
+  if (!strokes || strokes.length === 0) {
     return;
   }
 
   // Render each stroke
   for (const stroke of strokes) {
-    if (!stroke || typeof stroke !== 'object' || !Array.isArray(stroke.points) || stroke.points.length === 0) continue;
+    if (!stroke.points || stroke.points.length === 0) continue;
 
     ctx.save();
     ctx.lineCap = 'round';
@@ -476,9 +192,7 @@ export function exportCanvasSnapshot(canvas, strokes, maxDim = 1400, quality = 0
     bytes: approxBytes,
     width: targetW,
     height: targetH,
-    strokeCount: Array.isArray(strokes)
-      ? strokes.filter((s) => s && Array.isArray(s.points) && s.points.length > 0).length
-      : 0,
+    strokeCount: (strokes || []).length,
   };
 }
 

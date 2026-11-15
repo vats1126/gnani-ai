@@ -39,7 +39,7 @@ export default function Header({
           <button
             type="button"
             className={`subject-btn ${subject === 'Maths' ? 'subject-btn-active' : ''}`}
-            onClick={() => onSubjectChange?.('Maths')}
+            onClick={() => onSubjectChange('Maths')}
             role="radio"
             aria-checked={subject === 'Maths'}
           >
@@ -48,7 +48,7 @@ export default function Header({
           <button
             type="button"
             className={`subject-btn ${subject === 'Science' ? 'subject-btn-active' : ''}`}
-            onClick={() => onSubjectChange?.('Science')}
+            onClick={() => onSubjectChange('Science')}
             role="radio"
             aria-checked={subject === 'Science'}
           >
@@ -62,7 +62,7 @@ export default function Header({
             <button
               type="button"
               className={`source-switch-btn ${inputSource === 'whiteboard' ? 'source-active' : ''}`}
-              onClick={() => onInputSourceChange?.('whiteboard')}
+              onClick={() => onInputSourceChange('whiteboard')}
               title="Interactive drawing whiteboard"
               aria-checked={inputSource === 'whiteboard'}
             >
@@ -71,7 +71,7 @@ export default function Header({
             <button
               type="button"
               className={`source-switch-btn ${inputSource === 'pdf' ? 'source-active' : ''}`}
-              onClick={() => onInputSourceChange?.('pdf')}
+              onClick={() => onInputSourceChange('pdf')}
               title="Upload and inspect PDF worksheets"
               aria-checked={inputSource === 'pdf'}
             >
@@ -105,7 +105,7 @@ export default function Header({
         <button
           type="button"
           className="btn-new-session"
-          onClick={() => onNewSession?.()}
+          onClick={onNewSession}
           title="Reset Whiteboard and start a new tutoring session"
           aria-label="Start new session"
         >
