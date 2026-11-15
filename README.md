@@ -1,4 +1,32 @@
-# Agentic Multilingual Learning Tutor
+# 🎓 Agentic Multilingual Learning Tutor
+
+<div align="center">
+
+![Agentic Tutor Banner](https://img.shields.io/badge/Project-Agentic%20Multilingual%20Tutor-blueviolet?style=for-the-badge&logo=google)
+![Gemini Live](https://img.shields.io/badge/Google-Gemini%20Live%203.8-4285F4?style=for-the-badge&logo=google)
+![Gnani.ai](https://img.shields.io/badge/Gnani.ai-Timbre%20%7C%20Prisma%20v3-00C853?style=for-the-badge)
+![SymPy CAS](https://img.shields.io/badge/CAS-SymPy%20Deterministic%20Verification-F57C00?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Complete%20%26%20Production%20Ready-success?style=for-the-badge)
+
+<br/>
+
+> **"Bridging India's STEM learning gap with voice-first Socratic AI, native Indic languages, real-time multimodal whiteboarding, and deterministic mathematical verification."**
+
+</div>
+
+---
+
+## 🏆 Hackathon Submission & Judges Showcase
+
+> [!IMPORTANT]
+> **Quick Access Links for Hackathon Evaluators:**
+> - 🎥 **Video Demo Walkthrough**: **[▶ Watch Video Submission (Google Drive)](https://drive.google.com/file/d/YOUR_VIDEO_DRIVE_LINK_HERE/view?usp=sharing)**
+> - 📊 **Pitch Deck (Presentation Slides)**: **[📑 View Pitch Deck (Google Drive)](https://drive.google.com/file/d/YOUR_PITCH_DECK_DRIVE_LINK_HERE/view?usp=sharing)**
+> - 📑 **Full Submission Hub & Evaluation Rubrics**: **[Read SUBMISSION.md](SUBMISSION.md)**
+> - 💻 **GitHub Repository**: **[https://github.com/vats1126/gnani-ai](https://github.com/vats1126/gnani-ai)**
+> - 🌐 **Local Web Application**: `http://localhost:5173` | **FastAPI Backend**: `http://127.0.0.1:8000`
+
+---
 
 An interactive, voice-first, multimodal educational assistant designed for multilingual school students across India. Powered by **Google Gemini Live** (`gemini-3.8-live`), **Gnani Voice APIs** (Timbre TTS & Prisma STT), **SymPy mathematical CAS verification**, an interactive **digital whiteboard**, and a **PDF worksheet viewer**.
 
