@@ -21,7 +21,7 @@
 > [!IMPORTANT]
 > **Quick Access Links for Hackathon Evaluators:**
 > - 🎥 **Video Demo Walkthrough**: **[▶ Watch Video Submission (Google Drive)](https://drive.google.com/file/d/1C_P8EGqbkLXghm2vVgrkLuYWwY1W7SwU/view?usp=sharing)**
-> - 📊 **Pitch Deck (Presentation Slides)**: **[📑 View Pitch Deck (Google Drive)](https://drive.google.com/file/d/1d4hk98USki2EsIRgpDy74Vs4_lNGWvMB/view?usp=sharing)**
+> - 📊 **Pitch Deck (Presentation Slides)**: **[📑 View Pitch Deck (Google Drive)](https://drive.google.com/file/d/17E45IR2nMaq9paueNWQx4rtJkL66k3pR/view?usp=drivesdk)**
 > - 🚀 **Live Production Deployment**: **[https://gnani-ai-gnzb.vercel.app/](https://gnani-ai-gnzb.vercel.app/)**
 > - 📑 **Full Submission Hub & Evaluation Rubrics**: **[Read SUBMISSION.md](SUBMISSION.md)**
 > - 💻 **GitHub Repository**: **[https://github.com/vats1126/gnani-ai](https://github.com/vats1126/gnani-ai)**
