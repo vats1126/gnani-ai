@@ -24,9 +24,10 @@
 | Resource | Direct Link | Description |
 | :--- | :--- | :--- |
 | 🎥 **Video Demo Walkthrough** | **[▶ Watch Video Submission (Google Drive)](https://drive.google.com/file/d/YOUR_VIDEO_DRIVE_LINK_HERE/view?usp=sharing)** | End-to-end 3-minute demonstration of voice dialogue, whiteboard interaction, SymPy CAS step check, and PDF worksheet ingestion. |
-| 📊 **Pitch Deck (Slides)** | **[📑 View Pitch Deck (Google Drive)](https://drive.google.com/file/d/YOUR_PITCH_DECK_DRIVE_LINK_HERE/view?usp=sharing)** | Executive problem breakdown, Indian educational landscape, architectural topology, business model, and product roadmap. |
+| 📊 **Pitch Deck (Slides)** | **[📑 View Pitch Deck (Google Drive)](https://drive.google.com/file/d/1d4hk98USki2EsIRgpDy74Vs4_lNGWvMB/view?usp=sharing)** | Executive problem breakdown, Indian educational landscape, architectural topology, business model, and product roadmap. |
+| 🚀 **Live Production App** | **[https://gnani-ai-gnzb.vercel.app/](https://gnani-ai-gnzb.vercel.app/)** | Deployed on Vercel with serverless FastAPI backend and Vite SPA frontend. |
 | 💻 **GitHub Repository** | **[GitHub: vats1126/gnani-ai](https://github.com/vats1126/gnani-ai)** | Complete production source code, clean git history, automated test suites, and deployment configuration. |
-| 🌐 **Local / Live Demo** | `http://localhost:5173` | Instant 1-click startup using `start.bat` on Windows. |
+| 🌐 **Local Demo** | `http://localhost:5173` | Instant 1-click startup using `start.bat` on Windows. |
 
 ---
 

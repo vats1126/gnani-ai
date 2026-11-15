@@ -6,7 +6,8 @@
 ### Built for Indian Students • Powered by Google Gemini Live & Gnani.ai
 
 [![GitHub](https://img.shields.io/badge/GitHub-vats1126%2Fgnani--ai-181717?style=for-the-badge&logo=github)](https://github.com/vats1126/gnani-ai)
-[![Demo](https://img.shields.io/badge/Demo-Localhost%20%3A5173-blue?style=for-the-badge)](http://localhost:5173)
+[![Vercel Live](https://img.shields.io/badge/Vercel-Live%20App-black?style=for-the-badge&logo=vercel)](https://gnani-ai-gnzb.vercel.app/)
+[![Demo](https://img.shields.io/badge/Local%20Demo-localhost%3A5173-blue?style=for-the-badge)](http://localhost:5173)
 
 </div>
 
@@ -15,15 +16,18 @@
 ## 🔗 Official Submission Links for Judges
 
 > [!NOTE]
-> Please find below the official Google Drive links for the video demonstration and the pitch deck presentation slides.
+> Please find below the official Google Drive link for the pitch deck presentation slides and the live deployed web application.
 
 ```
 ========================================================================================
-🎥 VIDEO DEMONSTRATION (GOOGLE DRIVE):
-👉 https://drive.google.com/file/d/YOUR_VIDEO_DRIVE_LINK_HERE/view?usp=sharing
+🚀 LIVE DEPLOYED WEB APPLICATION:
+👉 https://gnani-ai-gnzb.vercel.app/
 
 📊 PITCH DECK SLIDES (GOOGLE DRIVE):
-👉 https://drive.google.com/file/d/YOUR_PITCH_DECK_DRIVE_LINK_HERE/view?usp=sharing
+👉 https://drive.google.com/file/d/1d4hk98USki2EsIRgpDy74Vs4_lNGWvMB/view?usp=sharing
+
+🎥 VIDEO DEMONSTRATION (GOOGLE DRIVE):
+👉 https://drive.google.com/file/d/YOUR_VIDEO_DRIVE_LINK_HERE/view?usp=sharing
 ========================================================================================
 ```
 
